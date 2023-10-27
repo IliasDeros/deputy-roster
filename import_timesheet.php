@@ -10,7 +10,7 @@ set_time_limit(0);
 /**
  * Setting Default Timezone
  */
-date_default_timezone_set("America/Denver");
+date_default_timezone_set("UTC");
 
 /**
  * Reading Employees and Schedule json files
