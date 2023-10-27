@@ -34,8 +34,14 @@ class Client {
                 'json' => $data,
             ]);
 
-        } catch (Throwable $e) {
-            die(var_export($e->getMessage()));
+        } catch (Exception $e) {
+            $message = $e->getMessage();
+            $pattern = '/(.*Overlap detected.*already working.* )/i';
+            if (preg_match($pattern, $message)) {
+                throw new Exception("OverlapDetected");
+            } else {
+                die(var_export($message));
+            }
         }
     }
 }
