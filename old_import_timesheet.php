@@ -8,6 +8,7 @@ class ImportSchedule {
 
     public $intCompanyId;
 
+    public $rostersList;
     public function __construct() {
         /**
          * Setting the time and Memory Limits
@@ -35,10 +36,15 @@ class ImportSchedule {
 
     public function import() {
 
+        /**
+         * Get Rosters List
+         */
+        $this->getRosterList();
         foreach ($this->employees as $employee) {
             $employee['intCompanyId'] = $this->intCompanyId;
             $this->initEmployee($employee); // add/update and get employee
         }
+
     }
 
 
@@ -70,7 +76,7 @@ class ImportSchedule {
              */
             $responseData = json_decode($response->getBody(), true);
             if(isset($responseData)) {
-                echo $responseData['DisplayName'] . " with ID ".  $responseData['Id'] ."  Initialized \n <br>";
+                echo $responseData['DisplayName'] . "  Initialized \n <br>";
                 $this->importEmployeeSchedule($newEmployeesData['id'], $responseData['Id'], $responseData['DisplayName']);
             }
         }
@@ -105,7 +111,7 @@ class ImportSchedule {
              * Find Roster ID
              * If Roster ID exists, the schedule will be updated/replaced with existing one
              */
-            $rosterId = $this->getRosterIdIfNeedToUpdateSchedule($empShift['intStartTimestamp'], $empShift['intEndTimestamp'], $deputyEmployeeId);
+            $rosterId = $this->findRosterId($empShift['intStartTimestamp'], $empShift['intEndTimestamp'], $deputyEmployeeId);
             if($rosterId && $rosterId > 0) {
                 $empShift['intRosterId'] = $rosterId;
             }
@@ -140,24 +146,46 @@ class ImportSchedule {
      * @return mixed
      * @throws Exception
      */
-    public function getRosterIdIfNeedToUpdateSchedule($startTime, $endTime, $employeeId) {
+    public function getRosterList() {
+        $endpoint = "api/v1/supervise/roster";
+        $response = Client::request('GET', $endpoint);
+        $this->rostersList = json_decode($response->getBody());
+        return $this->rostersList;
+    }
 
-        $endpoint = "api/v1/resource/Roster/QUERY";
-        $data = [
-            "search" => [
-                "s1" => ['field' => 'Employee', 'data' => $employeeId, "type" => 'eq'],
-                "s2" => ['field' => 'Date', 'data' => date('Y-m-d', $startTime), "type" => 'eq']
-            ]
-        ];
-        $response = Client::request('POST', $endpoint, $data);
-        $rosterList = json_decode($response->getBody());
-        $rosterId = null;
-        foreach ($rosterList as $roster) {
-            if(($startTime >= $roster->StartTime and $startTime <= $roster->EndTime) or ($endTime >= $roster->StartTime and $endTime <= $roster->EndTime) ) {
+
+    /**
+     * Find Roster ID to update existing Schedule
+     * @param $startTime
+     * @param $endTime
+     * @param $empId
+     * @return void|null
+     */
+    public function findRosterId($startTime, $endTime, $empId) {
+       $employeeRosters = $this->getRostersByEmployeeID($empId);
+       $rosterId = null;
+       foreach ($employeeRosters as $roster) {
+           if(($startTime >= $roster->StartTime and $startTime <= $roster->EndTime) or ($endTime >= $roster->StartTime and $endTime <= $roster->EndTime) ) {
                 $rosterId = $roster->Id;
+           }
+       }
+       return $rosterId;
+    }
+
+    /**
+     * Find Rosters of particular Employee
+     * @param $empId
+     * @return array
+     */
+    public function getRostersByEmployeeID($empId): array
+    {
+        $employeeRosters = [];
+        foreach ($this->rostersList as  $roster) {
+            if($roster->Employee == $empId) {
+                $employeeRosters[] = $roster;
             }
         }
-        return $rosterId;
+        return $employeeRosters;
     }
 }
 
@@ -171,3 +199,6 @@ try {
 } catch (Throwable $e) {
     die(var_export($e->getMessage()));
 }
+
+
+
