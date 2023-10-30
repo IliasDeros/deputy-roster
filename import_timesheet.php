@@ -136,12 +136,15 @@ class ImportSchedule {
 
 
     /**
-     * Get a list of rosters from last 12 hours, and forward 36 hours for all the employees
+     * Get roster ID if we need to update the schedule
      * @return mixed
      * @throws Exception
      */
     public function getRosterIdIfNeedToUpdateSchedule($startTime, $endTime, $employeeId) {
 
+        /**
+         * Query to find the existing timeslots to by the employee id and date
+         */
         $endpoint = "api/v1/resource/Roster/QUERY";
         $data = [
             "search" => [
