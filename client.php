@@ -9,6 +9,10 @@ class Client {
         try {
 
             /**
+             * BASE URL
+             */
+            $base_url= "https://353f6527123646.as.deputy.com/";
+            /**
              * Define Auth Token
              */
             $authToken = '4f768e19bf2f699bb7380feac71f6130';
@@ -29,7 +33,7 @@ class Client {
             /**
              * Make a request
              */
-            return $client->request($method, $apiEndPoint, [
+            return $client->request($method, ($base_url . $apiEndPoint), [
                 'headers' => $headers,
                 'json' => $data,
             ]);
